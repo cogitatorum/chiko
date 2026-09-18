@@ -2,6 +2,7 @@ package ui
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/atotto/clipboard"
@@ -54,10 +55,13 @@ func (u *UI) InitOutputPanel() InitOutputPanelComponents {
 }
 
 func (u *UI) initOutputPanel_handleTextArea(textarea *tview.TextArea) {
+	selectAllKey := u.keySelectAll()
+	dumpKey := u.keyDumpFile()
+
 	commands = map[string]Commands{
 		"selectall": {
-			KeyComb:    'a',
-			CommandKey: "A",
+			KeyComb:    selectAllKey,
+			CommandKey: strings.ToUpper(string(selectAllKey)),
 			Text:       "Select All",
 			OnExecute: func() {
 				u.doSelectAll(textarea)
@@ -72,8 +76,8 @@ func (u *UI) initOutputPanel_handleTextArea(textarea *tview.TextArea) {
 			},
 		},
 		"writefile": {
-			KeyComb:    'w',
-			CommandKey: "W",
+			KeyComb:    dumpKey,
+			CommandKey: strings.ToUpper(string(dumpKey)),
 			Text:       "Dump To File",
 			OnExecute: func() {
 				u.doWriteToFile(textarea)

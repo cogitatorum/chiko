@@ -169,35 +169,30 @@ func (u *UI) setupGlobalInputCapture() {
 			return event
 		}
 
-		switch event.Rune() {
+		switch r := event.Rune(); r {
 		case 'u':
 			u.ShowSetServerURLModal()
 		case 'm':
 			u.ShowSetRequestMethodModal()
-		case 'a':
-			u.ShowAuthorizationModal()
 		case 'd':
 			u.ShowMetadataModal()
 		case 'p':
 			u.ShowRequestPayloadModal()
-		case 'i':
-			u.InvokeRPC()
-		case 'h':
-			if u.VimEnabled {
-				return event
-			}
-			u.ShowHistoryModal()
-		case 'y':
-			if !u.VimEnabled {
-				return event
-			}
-			u.ShowHistoryModal()
-		case 'b':
-			u.ShowSaveToBookmarkModal()
 		case 'q':
 			u.QuitApplication()
 		default:
-			return event
+			switch {
+			case r == u.keyAuthorization():
+				u.ShowAuthorizationModal()
+			case r == u.keyInvoke():
+				u.InvokeRPC()
+			case r == u.keyBookmark():
+				u.ShowSaveToBookmarkModal()
+			case r == u.keyHistory():
+				u.ShowHistoryModal()
+			default:
+				return event
+			}
 		}
 
 		return nil
