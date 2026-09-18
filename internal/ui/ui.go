@@ -16,16 +16,18 @@ import (
 	"github.com/felangga/chiko/internal/controller/grpc"
 	"github.com/felangga/chiko/internal/controller/history"
 	"github.com/felangga/chiko/internal/controller/storage"
+	"github.com/felangga/chiko/internal/controller/vimmode"
 	"github.com/felangga/chiko/internal/entity"
 	"github.com/felangga/chiko/internal/logger"
 )
 
 type ComponentLayout struct {
-	MenuList     *tview.List
-	BookmarkList *tview.TreeView
-	LogList      *tview.TextView
-	OutputPanel  InitOutputPanelComponents
-	HistoryPanel *tview.TreeView
+	MenuList         *tview.List
+	BookmarkList     *tview.TreeView
+	LogList          *tview.TextView
+	OutputPanel      InitOutputPanelComponents
+	HistoryPanel     *tview.TreeView
+	VimModeIndicator *InitVimModeComponents
 }
 
 type UI struct {
@@ -37,13 +39,13 @@ type UI struct {
 	Bookmark      *bookmark.Bookmark
 	History       *history.History
 	Storage       *storage.Storage
+	VimMode       *vimmode.VimMode
 	LogChannel    chan entity.Log
 	OutputChannel chan entity.Output
+	EventsChannel chan any
 
 	Theme *entity.Theme
 }
-
-
 
 func (u *UI) SetFocus(p tview.Primitive) {
 	go u.App.QueueUpdateDraw(func() {
@@ -69,6 +71,7 @@ func NewUI(session entity.Session) UI {
 	bookmark := bookmark.NewBookmark()
 	history := history.NewHistory()
 	storage := storage.NewStorage()
+	vimmode := vimmode.NewVimMode()
 
 	instance := &UI{
 		App:           app,
@@ -77,17 +80,19 @@ func NewUI(session entity.Session) UI {
 		Bookmark:      &bookmark,
 		History:       &history,
 		Storage:       &storage,
+		VimMode:       vimmode,
 		LogChannel:    logger.LogChannel(),
 		OutputChannel: logger.OutputChannel(),
 		Theme:         &entity.TerminalTheme,
 	}
 
 	instance.Layout = &ComponentLayout{
-		MenuList:     instance.InitSidebarMenu(),
-		BookmarkList: instance.InitBookmarkMenu(),
-		LogList:      instance.InitLogList(),
-		OutputPanel:  instance.InitOutputPanel(),
-		HistoryPanel: instance.InitHistoryPanel(),
+		MenuList:         instance.InitSidebarMenu(),
+		BookmarkList:     instance.InitBookmarkMenu(),
+		LogList:          instance.InitLogList(),
+		OutputPanel:      instance.InitOutputPanel(),
+		HistoryPanel:     instance.InitHistoryPanel(),
+		VimModeIndicator: instance.InitVimModeIndicator(),
 	}
 
 	// Background window (lowest Z) — containing the main app layout
@@ -129,6 +134,7 @@ func (u *UI) setupAppLayout() *tview.Flex {
 
 	mainContent := tview.NewFlex().SetDirection(tview.FlexRow).
 		AddItem(u.Layout.OutputPanel.Layout, 0, 3, true).
+		AddItem(u.Layout.VimModeIndicator.Layout, 3, 0, false).
 		AddItem(u.Layout.LogList, 10, 1, false)
 
 	content := tview.NewFlex().SetDirection(tview.FlexColumn).
