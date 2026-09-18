@@ -167,8 +167,8 @@ func (u *UI) setupGlobalInputCapture() {
 			u.ShowRequestPayloadModal()
 		case 'i':
 			u.InvokeRPC()
-		case 'h':
-			u.ShowHistoryModal()
+		// case 'h':
+		// 	u.ShowHistoryModal()
 		case 'b':
 			u.ShowSaveToBookmarkModal()
 		case 'q':

@@ -43,6 +43,8 @@ type UI struct {
 	Theme *entity.Theme
 }
 
+
+
 func (u *UI) SetFocus(p tview.Primitive) {
 	go u.App.QueueUpdateDraw(func() {
 		u.App.SetFocus(p)
