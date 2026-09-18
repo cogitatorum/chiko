@@ -29,7 +29,9 @@ var commands map[string]Commands
 // InitOutputPanel initializes the output panel on the main screen
 func (u *UI) InitOutputPanel() InitOutputPanelComponents {
 	output := tview.NewTextArea()
-	output.SetSelectedStyle(tcell.StyleDefault.Background(tcell.ColorYellow).Foreground(tcell.ColorBlack))
+	if u.VimEnabled {
+		output.SetSelectedStyle(tcell.StyleDefault.Background(tcell.ColorYellow).Foreground(tcell.ColorBlack))
+	}
 	output.SetWrap(false)
 	output.SetMaxLength(1)
 	output.SetTextStyle(tcell.StyleDefault.
@@ -88,51 +90,13 @@ func (u *UI) initOutputPanel_handleTextArea(textarea *tview.TextArea) {
 	}
 
 	textarea.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		mod := event.Modifiers()
-
-		// Ctrl(+Shift)+hjkl usually arrives as KeyCtrlH/J/K/L, not as a
-		// rune with modifiers. TextArea binds Ctrl-L to select-all and
-		// Ctrl-K to delete-to-EOL, so translate them to the matching
-		// Ctrl+Shift+arrow events (word/line select, same as arrows).
-		// KeyCtrlH is the same code as KeyBackspace and almost never has
-		// ModCtrl set, so always treat it as left (panel is read-only).
-		switch event.Key() {
-		case tcell.KeyCtrlL:
-			return tcell.NewEventKey(tcell.KeyRight, 0, tcell.ModCtrl|tcell.ModShift)
-		case tcell.KeyCtrlK:
-			return tcell.NewEventKey(tcell.KeyUp, 0, tcell.ModCtrl|tcell.ModShift)
-		case tcell.KeyCtrlJ:
-			return tcell.NewEventKey(tcell.KeyDown, 0, tcell.ModCtrl|tcell.ModShift)
-		case tcell.KeyCtrlH: // == KeyBackspace
-			return tcell.NewEventKey(tcell.KeyLeft, 0, tcell.ModCtrl|tcell.ModShift)
-		}
-
-		// Vim-style navigation. Shift+letter usually arrives as an uppercase
-		// rune without ModShift (unlike Shift+arrow), so synthesize it.
-		if event.Key() == tcell.KeyRune {
-			switch event.Rune() {
-			case 'j':
-				return tcell.NewEventKey(tcell.KeyDown, 0, mod)
-			case 'J':
-				return tcell.NewEventKey(tcell.KeyDown, 0, mod|tcell.ModShift)
-			case 'k':
-				return tcell.NewEventKey(tcell.KeyUp, 0, mod)
-			case 'K':
-				return tcell.NewEventKey(tcell.KeyUp, 0, mod|tcell.ModShift)
-			case 'h':
-				return tcell.NewEventKey(tcell.KeyLeft, 0, mod)
-			case 'H':
-				return tcell.NewEventKey(tcell.KeyLeft, 0, mod|tcell.ModShift)
-			case 'l':
-				return tcell.NewEventKey(tcell.KeyRight, 0, mod)
-			case 'L':
-				return tcell.NewEventKey(tcell.KeyRight, 0, mod|tcell.ModShift)
+		// Block editing keys on the read-only output. With --vim, KeyBackspace
+		// (== KeyCtrlH) is left alone so VimMode can remap it; otherwise block both.
+		if u.VimEnabled {
+			if event.Key() == tcell.KeyBackspace2 {
+				return nil
 			}
-		}
-
-		// Block Delete/Backspace2; plain BS (KeyBackspace == KeyCtrlH) is
-		// already remapped to left above.
-		if event.Key() == tcell.KeyBackspace2 {
+		} else if event.Key() == tcell.KeyBackspace || event.Key() == tcell.KeyBackspace2 {
 			return nil
 		}
 
