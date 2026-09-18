@@ -22,7 +22,13 @@ func (u *UI) InitSidebarMenu() *tview.List {
 	menuList.AddItem("Invoke", "", 'i', u.InvokeRPC)
 	menuList.AddItem("[::d]"+strings.Repeat(string(tcell.RuneHLine), 25), "", 0, nil)
 	menuList.AddItem("Save Bookmark", "", 'b', u.ShowSaveToBookmarkModal)
-	menuList.AddItem("History", "", 'h', u.ShowHistoryModal)
+
+	// 'h' is left-motion in vim mode; use 'y' (historY) instead.
+	historyKey := rune('h')
+	if u.VimEnabled {
+		historyKey = 'y'
+	}
+	menuList.AddItem("History", "", historyKey, u.ShowHistoryModal)
 	menuList.AddItem("Quit", "", 'q', u.QuitApplication)
 
 	// Handle keypress on menu list

@@ -183,7 +183,14 @@ func (u *UI) setupGlobalInputCapture() {
 		case 'i':
 			u.InvokeRPC()
 		case 'h':
-			// With --vim, 'h' is remapped to KeyLeft before this switch.
+			if u.VimEnabled {
+				return event
+			}
+			u.ShowHistoryModal()
+		case 'y':
+			if !u.VimEnabled {
+				return event
+			}
 			u.ShowHistoryModal()
 		case 'b':
 			u.ShowSaveToBookmarkModal()
