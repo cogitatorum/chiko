@@ -27,7 +27,7 @@ func NewVimMode(app *tview.Application) *VimMode {
 	return vm
 }
 
-// OnTextWidget reports whether the focused primitive is vim-managed.
+// OnTextWidget reports whether the focused primitive is a text editor.
 func (vm *VimMode) OnTextWidget() bool {
 	switch vm.App.GetFocus().(type) {
 	case *tview.TextArea, *tview.InputField:
@@ -37,31 +37,27 @@ func (vm *VimMode) OnTextWidget() bool {
 	}
 }
 
-// TranslateInput applies the active mode's keymap and nvim-style mode switches.
-// Returns nil when the key was consumed (e.g. mode change).
+// TranslateInput applies the active mode's keymap and nvim-style mode switches
+// for any focused widget (lists, trees, modals, etc.). Edit mode leaves keys
+// alone so the user can type. Returns nil when the key was consumed.
 func (vm *VimMode) TranslateInput(event *tcell.EventKey) *tcell.EventKey {
-	if !vm.OnTextWidget() {
-		return event
-	}
-
 	if handled := vm.handleModeSwitch(event); handled {
 		return nil
 	}
 
-	// Ctrl-hjkl must be handled before the keymap: TextArea binds KeyCtrlL to
-	// select-all (and KeyCtrlK to delete). On key-repeat that freezes the UI.
-	// Modern terminals may also send KeyRune+'l'+ModCtrl instead of KeyCtrlL.
-	if vm.ActiveMode == entity.VimModeNormal || vm.ActiveMode == entity.VimModeVisual {
-		if ev := translateCtrlHJKL(event, vm.ActiveMode == entity.VimModeVisual); ev != nil {
-			return ev
-		}
+	// Edit mode: no motion remaps — allow typing (including hjkl) everywhere.
+	if vm.ActiveMode == entity.VimModeEdit {
+		return EditKeyMap.GetBinding(event).To
+	}
+
+	// Ctrl-hjkl before keymap: TextArea binds KeyCtrlL to select-all.
+	if ev := translateCtrlHJKL(event, vm.ActiveMode == entity.VimModeVisual); ev != nil {
+		return ev
 	}
 
 	switch vm.ActiveMode {
 	case entity.VimModeNormal:
 		return NormalKeyMap.GetBinding(event).To
-	case entity.VimModeEdit:
-		return EditKeyMap.GetBinding(event).To
 	case entity.VimModeVisual:
 		return VisualKeyMap.GetBinding(event).To
 	}
@@ -109,6 +105,7 @@ func (vm *VimMode) handleModeSwitch(event *tcell.EventKey) bool {
 			vm.SetMode(entity.VimModeNormal)
 			return true
 		}
+		// Already Normal — let Esc through (e.g. close modal).
 		return false
 	}
 

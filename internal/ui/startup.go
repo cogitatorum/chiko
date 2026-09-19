@@ -164,8 +164,7 @@ func (u *UI) setupGlobalInputCapture() {
 		if _, ok := u.App.GetFocus().(*tview.InputField); ok {
 			return event
 		}
-		if u.VimEnabled && u.VimMode != nil &&
-			u.VimMode.OnTextWidget() && u.VimMode.ActiveMode == entity.VimModeEdit {
+		if u.VimEnabled && u.VimMode != nil && u.VimMode.ActiveMode == entity.VimModeEdit {
 			return event
 		}
 

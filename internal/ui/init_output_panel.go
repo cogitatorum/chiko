@@ -111,7 +111,15 @@ func (u *UI) initOutputPanel_handleTextArea(textarea *tview.TextArea) {
 		}
 
 		for _, k := range commands {
-			if event.Key() == tcell.KeyRune && tcell.Key(event.Rune()) == tcell.Key(k.KeyComb) {
+			// Ignore modified runes so vim remaps (e.g. e → Alt-f for word-end)
+			// do not collide with panel keys like Dump-to-File ('f').
+			if event.Key() != tcell.KeyRune {
+				continue
+			}
+			if event.Modifiers()&(tcell.ModAlt|tcell.ModCtrl) != 0 {
+				continue
+			}
+			if event.Rune() == k.KeyComb {
 				k.OnExecute()
 				return nil
 			}
